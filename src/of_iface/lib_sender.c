@@ -16,7 +16,7 @@
 #include <of_iface/iface_api.h>
 #include <openfec/of_openfec_api.h>
 
-#define SYMBOL_SIZE	252		/* symbol size, in bytes (must be multiple of 4 in this simple example) */
+#define SYMBOL_SIZE	96		/* symbol size, in bytes (must be multiple of 4 in this simple example) */
 #define	DEFAULT_K	100		/* default k value */
 #define CODE_RATE	0.5 	/* k/n = 2/3 means we add 50% of repair symbols */
 #define LOSS_RATE	0.0		/* we consider 30% of packet losses... It assumes there's no additional loss during UDP transmissions */
@@ -29,10 +29,10 @@ static int
 give_packet(int socket_fd, BYTE ** pkt, int len)
 {
 	int i = 0;
-	if (rand()%100 > 20){
-		/* 100 milliseconds between writings */
-		usleep(1 * 1000);
-		write(socket_fd, *pkt, len);
+	if (rand()%100 > 20)
+	{
+		send(socket_fd, *pkt, len, MSG_DONTWAIT);
+		usleep(10*1000);
 	}
 	return 0;
 }
@@ -145,15 +145,11 @@ fec_packet_send(int socket_fd, BYTE * p, int len, int id)
 			memcpy(enc_symbols_tab[esi], p + (esi * SYMBOL_SIZE), SYMBOL_SIZE);
 		}else{
 			if (last_packet_size != 0){
-				printf("\nCopying last packet (part): %d\n", len%SYMBOL_SIZE);
 				memcpy(enc_symbols_tab[esi], p + (esi * SYMBOL_SIZE), (UINT32)(len % SYMBOL_SIZE));
 			}else{
-				printf("\nCopying last packet (full): %d\n", SYMBOL_SIZE);
 				memcpy(enc_symbols_tab[esi], p + (esi * SYMBOL_SIZE), SYMBOL_SIZE);
 			}
 		}
-		/* memset(enc_symbols_tab[esi], (char)(esi + 1), SYMBOL_SIZE); */
-		/* instead of memset, memcpy */
 	}
 	for (esi = k; esi < n; esi++)
 	{

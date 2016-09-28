@@ -16,7 +16,7 @@
 #include <of_iface/iface_api.h>
 #include <openfec/of_openfec_api.h>
 
-#define SYMBOL_SIZE	252		/* symbol size, in bytes (must be multiple of 4 in this simple example) */
+#define SYMBOL_SIZE	96		/* symbol size, in bytes (must be multiple of 4 in this simple example) */
 #define	DEFAULT_K	100		/* default k value */
 #define CODE_RATE	0.5		/* k/n = 2/3 means we add 50% of repair symbols */
 #define LOSS_RATE	0.0		/* we consider 30% of packet losses... It assumes there's no additional loss during UDP transmissions */
@@ -47,14 +47,15 @@ input_timeout (int filedes, unsigned int seconds, unsigned int microseconds)
   return (select (FD_SETSIZE, &set, NULL, NULL, &timeout));
 }
 
-static int get_packet(int socket_fd, BYTE ** pkt, int * len)
+static int 
+get_packet(int socket_fd, BYTE ** pkt, int * len)
 {
 	int readed = 0;
 	int ret;
 	/* I.E. read form file or socket */
 	INT32		saved_len = *len;	/* save it, in case we need to do several calls to recvfrom */
 	/* Timeout of 500 ms */
-	if (ret = input_timeout(socket_fd, 0, ms(500)), ret > 0)
+	if (ret = input_timeout(socket_fd, 0, ms(100)), ret > 0)
 	{
 		readed = read(socket_fd, *pkt, saved_len);
 		if (readed <= 0)
@@ -179,8 +180,7 @@ fec_packet_recv(int socket_fd, BYTE * buffer, int * packet_len, int * expected_i
 		}
 		/* Copy the pkt to recv_symbol matrix */
 		memcpy(&recv_symbols_tab[esi][0], (BYTE*) pkt_with_fpi + OF_OVERHEAD, SYMBOL_SIZE);
-		printf("recv_symbols_tab[%d]: %p\n", esi, &recv_symbols_tab[esi][0]);
-		//printf("%02d => receiving symbol esi=%u (%s)\n", n_received, esi, (esi < k) ? "src" : "repair");
+		printf("%02d => receiving symbol esi=%u (%s)\n", n_received, esi, (esi < k) ? "src" : "repair");
 		/* Give the symbol without the header */
 		/* send symbol recv_symbol[esi] to of_decode_ */
 		if (of_decode_with_new_symbol(ses, recv_symbols_tab[esi], esi) == OF_STATUS_ERROR)
